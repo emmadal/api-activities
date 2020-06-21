@@ -1,62 +1,98 @@
 import activities from "./data.ts";
+import db from "./mongo.ts";
+
 export const Controllers = {
-  allActivies: (ctx: any) => {
-    ctx.response.body = activities;
-    return;
+  allActivies: async (ctx: any) => {
+    const data = await db.find();
+    if (data) {
+      ctx.response.body = {
+        success: true,
+        data,
+      };
+      return;
+    }
   },
   oneActivity: async (ctx: any) => {
-    const data = await activities.find((m) => m.id === ctx.params.id);
-    if (data) {
-      ctx.response.status = 200;
-      ctx.response.body = data;
-      return;
-    } else {
-      ctx.response.status = 404;
-      ctx.response.body = { error: "cannot find the data" };
-      return;
+    if (ctx.params.id) {
+      const data = await db.findOne({ _id: { $oid: ctx.params.id } });
+      if (data) {
+        ctx.response.status = 200;
+        ctx.response.body = {
+          success: true,
+          data,
+        };
+        return;
+      } else {
+        ctx.response.status = 404;
+        ctx.response.body = { success: false, message: "cannot find the data" };
+        return;
+      }
     }
   },
   createActivity: async (ctx: any) => {
     if (ctx.request.hasBody) {
       ctx.response.status = 200;
       const { value } = await ctx.request.body();
-      activities.push(value);
-      ctx.response.body = value;
+      const data = await db.insertOne(value);
+      ctx.response.body = { success: true, message: "data created", data };
       return;
     } else {
       ctx.response.status = 404;
-      ctx.response.body = { error: "no data post" };
+      ctx.response.body = { success: false, message: "no data post" };
       return;
     }
   },
   deleteActivity: async (ctx: any) => {
-    const data = await activities.find((m) => m.id === ctx.params.id);
-    const dataID = await activities.findIndex((m) => m.id === ctx.params.id);
-    if (data && ctx.params.id) {
-      activities.splice(dataID, 1);
-      ctx.response.status = 200;
-      ctx.response.body = data;
-      return;
+    if (ctx.params.id) {
+      const count = await db.deleteOne({ _id: { $oid: ctx.params.id } });
+      if (!count) {
+        ctx.response.status = 404;
+        ctx.response.body = {
+          success: false,
+          message: "no activity deleted",
+        };
+      } else {
+        ctx.response.status = 200;
+        ctx.response.body = {
+          success: true,
+          message: "activity deleted",
+        };
+      }
     } else {
       ctx.response.status = 404;
-      ctx.response.body = { error: "cannot find the data to delete" };
-      return;
+      ctx.response.body = {
+        success: false,
+        message: "No data found to delete",
+      };
     }
   },
   updateActivity: async (ctx: any) => {
-    const data = await activities.find((m) => m.id === ctx.params.id);
-    const dataIndex = await activities.findIndex((m) => m.id === ctx.params.id);
-    if (data && ctx.request.hasBody) {
+    if (ctx.request.hasBody) {
       const { value } = await ctx.request.body();
-      const updateData = { ...data, ...value };
-      activities.splice(dataIndex, 1, updateData);
-      ctx.response.status = 200;
-      ctx.response.body = updateData;
-      return;
+      const updated = await db.updateOne(
+        { _id: { $oid: ctx.params.id } },
+        { $set: { ...value } },
+      );
+      if (updated) {
+        ctx.response.status = 200;
+        ctx.response.body = {
+          success: true,
+          message: "data updated",
+          data: updated,
+        };
+      } else {
+        ctx.response.status = 404;
+        ctx.response.body = {
+          success: false,
+          message: "no data updated",
+        };
+      }
     } else {
       ctx.response.status = 404;
-      ctx.response.body = { error: "cannot find the data to update it" };
-      return;
+      ctx.response.body = {
+        success: false,
+        message: "no body value",
+      };
     }
   },
 };
