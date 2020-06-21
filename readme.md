@@ -1,11 +1,11 @@
 # DENO API
 
-> this is a simple REST API with Deno and Oak write in Typescript
+> this is a simple REST API with Deno, Oak and MongoDB write in Typescript
 
 ## Run
 
 ```sh
-deno run --allow-net --allow-write --allow-read --allow-env server.ts
+deno run --allow-net --allow-write --allow-read --allow-env --allow plugin --unstable server.ts
 ```
 
 ### Routes
