@@ -1,2 +1,4 @@
 # vscode params
 .vscode/
+# deno mongodb plugins
+.deno_plugins
